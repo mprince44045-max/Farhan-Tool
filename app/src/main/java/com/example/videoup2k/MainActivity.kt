@@ -78,18 +78,28 @@ class MainActivity : ComponentActivity() {
         status = "2K me convert ho raha hai..."
 
         val output = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4").absolutePath
-        val cmd = "-y -i \"$input\" -vf \"scale=2560:1440:flags=lanczos\" " +
-                  "-c:v libx264 -preset slow -crf 18 -c:a copy \"$output\""
 
-        FFmpegKit.executeAsync(cmd) { session ->
-            runOnUiThread {
-                processing = false
-                status = if (ReturnCode.isSuccess(session.returnCode)) {
-                    "✅ Complete!\n$output"
-                } else {
-                    "❌ Failed: ${session.failStackTrace?.take(150)}"
+        Thread {
+            try {
+                val cmd = "-y -i \"$input\" -vf \"scale=2560:1440:flags=lanczos\" " +
+                          "-c:v libx264 -preset slow -crf 18 -c:a copy \"$output\""
+
+                FFmpegKit.executeAsync(cmd) { session ->
+                    runOnUiThread {
+                        processing = false
+                        status = if (ReturnCode.isSuccess(session.returnCode)) {
+                            "✅ Complete!\n$output"
+                        } else {
+                            "❌ Failed: ${session.failStackTrace?.take(150)}"
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    processing = false
+                    status = "❌ Crash Error: ${e.message}"
                 }
             }
-        }
+        }.start()
     }
 }
