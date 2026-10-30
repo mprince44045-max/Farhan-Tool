@@ -41,19 +41,29 @@ class MainActivity : ComponentActivity() {
             contentResolver.openInputStream(it)?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
             inputPath = file.absolutePath
             outputPath = null
-            status = "Ready ✓"
+            status = "Video Ready ✓"
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 Scaffold(
-                    topBar = { TopAppBar(title = { Text("Farhan Tool", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1E1E1E))) }
+                    topBar = { 
+                        TopAppBar(
+                            title = { Text("Farhan Tool", fontWeight = FontWeight.Bold, color = Color.White) }, 
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1E1E1E))
+                        ) 
+                    }
                 ) { padding ->
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).background(Color(0xFF121212)),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp)
+                            .background(Color(0xFF121212)),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -65,7 +75,9 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBB86FC))
-                        ) { Text("Select Video", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                        ) { 
+                            Text("Select Video", fontSize = 18.sp, fontWeight = FontWeight.Bold) 
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -75,7 +87,9 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth().height(60.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                            ) { Text("Convert to 2K", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                            ) { 
+                                Text("Convert to 2K", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) 
+                            }
                         }
 
                         if (processing) {
@@ -90,14 +104,19 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth().height(60.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                            ) { Text("Save to Gallery", fontSize = 18.sp) }
+                            ) { 
+                                Text("Save to Gallery", fontSize = 18.sp) 
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
+                        
                         Button(
                             onClick = { showTools = !showTools },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E1E1E))
-                        ) { Text(if (showTools) "Hide Tools" else "More Tools", color = Color.White) }
+                        ) { 
+                            Text(if (showTools) "Hide Tools" else "More Tools", color = Color.White) 
+                        }
 
                         if (showTools) {
                             Spacer(modifier = Modifier.height(16.dp))
@@ -118,7 +137,7 @@ class MainActivity : ComponentActivity() {
         processing = true
         outputPath = null
         status = "Converting to 2K..."
-        val output = File(filesDir, "out_${System.currentTimeMillis()}.mp4").absolutePath
+        val output = File(filesDir, "out_2k.mp4").absolutePath
 
         CoroutineScope(Dispatchers.IO).launch {
             val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v mpeg4 -crf 23 \"$output\""
@@ -145,8 +164,7 @@ class MainActivity : ComponentActivity() {
         val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
         uri?.let {
             contentResolver.openOutputStream(it)?.use { out -> file.inputStream().use { it.copyTo(out) } }
-            status = "✅ Saved!"
-            startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(it, "video/mp4"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
+            status = "✅ Saved to Gallery!"
         }
     }
 }
