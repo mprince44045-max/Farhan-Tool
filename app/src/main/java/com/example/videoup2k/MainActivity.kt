@@ -100,7 +100,8 @@ class MainActivity : ComponentActivity() {
                             Spacer(modifier = Modifier.height(24.dp))
                             CircularProgressIndicator(color = Color(0xFFBB86FC))
                         }
-
+                        
+                        // YAHAN BRACKET KI GALTI THEEK KI GAYI HAI
                         if (outputPath != null && !processing) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(
