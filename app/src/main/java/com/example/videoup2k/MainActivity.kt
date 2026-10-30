@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // 'mpeg4' encoder use kiya hai jo har phone me chalta hai
+                // Yahan 'mpeg4' encoder use kiya hai jo crash nahi karega
                 val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v mpeg4 -crf 23 \"$output\""
 
                 FFmpegKit.executeAsync(cmd) { session ->
