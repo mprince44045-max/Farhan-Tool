@@ -1,6 +1,11 @@
 package com.example.videoup2k
 
+import android.content.ContentValues
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
@@ -20,6 +25,7 @@ import java.io.File
 
 class MainActivity : ComponentActivity() {
     private var inputPath by mutableStateOf<String?>(null)
+    private var outputPath by mutableStateOf<String?>(null)
     private var status by mutableStateOf("Video select karein")
     private var processing by mutableStateOf(false)
 
@@ -33,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     file.outputStream().use { output -> input.copyTo(output) }
                 }
                 inputPath = file.absolutePath
+                outputPath = null
                 status = "Video Ready ✓"
             } catch (e: Exception) {
                 status = "Error selecting video: ${e.message}"
@@ -75,6 +82,17 @@ class MainActivity : ComponentActivity() {
                         Spacer(Modifier.height(24.dp))
                         CircularProgressIndicator()
                     }
+
+                    // Jab video 2K ban jaye, tab yeh button dikhega
+                    if (outputPath != null && !processing) {
+                        Spacer(Modifier.height(24.dp))
+                        Button(
+                            onClick = { saveToGalleryAndOpen(File(outputPath!!)) },
+                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50))
+                        ) {
+                            Text("💾 Save to Gallery & Play")
+                        }
+                    }
                 }
             }
         }
@@ -83,20 +101,23 @@ class MainActivity : ComponentActivity() {
     private fun upscale() {
         val input = inputPath ?: return
         processing = true
+        outputPath = null
         status = "2K me convert ho raha hai... (Thoda time lagega)"
 
-        val output = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4").absolutePath
+        val outputFile = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4")
+        val output = outputFile.absolutePath
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Yahan 'mpeg4' encoder use kiya hai jo crash nahi karega
+                // mpeg4 encoder crash nahi karta
                 val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v mpeg4 -crf 23 \"$output\""
 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
                         processing = false
                         if (ReturnCode.isSuccess(session.returnCode)) {
-                            status = "✅ Complete!\nFile saved in App Folder"
+                            outputPath = output
+                            status = "✅ Convert Complete!\nAb gallery me save karein"
                         } else {
                             val errorLogs = session.logs?.joinToString("\n") { it.message }?.takeLast(200) ?: "Unknown Error"
                             status = "❌ Failed:\n$errorLogs"
@@ -108,6 +129,38 @@ class MainActivity : ComponentActivity() {
                     processing = false
                     status = "❌ Error: ${e.message}"
                 }
+            }
+        }
+    }
+
+    private fun saveToGalleryAndOpen(file: File) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Video.Media.DISPLAY_NAME, "FarhanTool_2K_${System.currentTimeMillis()}.mp4")
+            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/FarhanTool")
+            }
+        }
+
+        val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
+        
+        uri?.let {
+            contentResolver.openOutputStream(it)?.use { outputStream ->
+                file.inputStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            
+            status = "✅ Gallery me save ho gaya!"
+            
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(it, "video/mp4")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                status = "Saved, par play nahi ho paya."
             }
         }
     }
