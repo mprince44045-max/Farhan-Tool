@@ -10,6 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") } // Yeh line add ki gayi hai
     }
 }
 rootProject.name = "Farhan-Tool"
