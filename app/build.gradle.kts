@@ -13,9 +13,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-        
+
         ndk {
-            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
         }
     }
 
@@ -45,5 +45,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
-    implementation("io.github.maitrungduc1410:ffmpeg-kit-video:7.1.5")
+    
+    // Full GPL Library jisme saare encoders (mpeg4/x264) hain
+    implementation("com.arthenica:ffmpeg-kit-full-gpl:6.0-2")
 }
