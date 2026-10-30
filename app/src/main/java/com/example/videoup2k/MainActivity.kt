@@ -38,7 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
-// Custom Colors
+// Custom Colors for Fancy Design
 val DarkBg = Color(0xFF121212)
 val CardBg = Color(0xFF1E1E1E)
 val AccentPurple = Color(0xFFBB86FC)
