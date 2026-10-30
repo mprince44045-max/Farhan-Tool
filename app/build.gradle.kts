@@ -14,8 +14,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        // Yeh line app ko crash hone se bachati hai (sirf 64-bit aur 32-bit supported)
         ndk {
-            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
         }
     }
 
@@ -46,6 +47,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     
-    // Full GPL Library jisme saare encoders (mpeg4/x264) hain
-    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full-gpl:8.1.7")
+    // Yeh library 100% available hai aur isme mpeg4 encoder chalta hai
+    implementation("io.github.maitrungduc1410:ffmpeg-kit-video:7.1.5")
 }
