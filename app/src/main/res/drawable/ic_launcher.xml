@@ -5,7 +5,7 @@
             <solid android:color="#FFFFFF" />
         </shape>
     </item>
-    <item android:drawable="@drawable/farhan_photo" 
+    <item android:drawable="@drawable/d957041bb46a96063a97d64d4f32f96b" 
           android:top="10dp" android:bottom="10dp" 
           android:left="10dp" android:right="10dp" />
 </layer-list>
