@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -24,12 +27,16 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         uri?.let {
-            val file = File(cacheDir, "input.mp4")
-            contentResolver.openInputStream(it)?.use { input ->
-                file.outputStream().use { output -> input.copyTo(output) }
+            try {
+                val file = File(cacheDir, "input.mp4")
+                contentResolver.openInputStream(it)?.use { input ->
+                    file.outputStream().use { output -> input.copyTo(output) }
+                }
+                inputPath = file.absolutePath
+                status = "Video Ready ✓"
+            } catch (e: Exception) {
+                status = "Error: ${e.message}"
             }
-            inputPath = file.absolutePath
-            status = "Ready ✓"
         }
     }
 
@@ -44,7 +51,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Text("Farhan tool", style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(16.dp))
-                    Text(status)
+                    Text(status, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Spacer(Modifier.height(32.dp))
 
                     Button(
@@ -75,32 +82,32 @@ class MainActivity : ComponentActivity() {
     private fun upscale() {
         val input = inputPath ?: return
         processing = true
-        status = "2K me convert ho raha hai..."
+        status = "2K me convert ho raha hai... (Thoda time lagega)"
 
         val output = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4").absolutePath
-        
-        // FFmpeg ko run karne ke liye Thread zaroori hai warna app crash hoti hai
-        Thread {
+
+        // Background Thread (Crash rokne ke liye)
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val cmd = "-y -i \"$input\" -vf \"scale=2560:1440:flags=lanczos\" " +
-                          "-c:v libx264 -preset slow -crf 18 -c:a copy \"$output\""
+                          "-c:v libx264 -preset ultrafast -crf 23 -c:a copy \"$output\""
 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
                         processing = false
-                        status = if (ReturnCode.isSuccess(session.returnCode)) {
-                            "✅ Complete!\n$output"
+                        if (ReturnCode.isSuccess(session.returnCode)) {
+                            status = "✅ Complete!\nFile saved in App Folder"
                         } else {
-                            "❌ Failed: ${session.failStackTrace?.take(150)}"
+                            status = "❌ Failed: ${session.failStackTrace?.take(100)}"
                         }
                     }
                 }
             } catch (e: Exception) {
                 runOnUiThread {
                     processing = false
-                    status = "❌ Crash Error: ${e.message}"
+                    status = "❌ Error: ${e.message}"
                 }
             }
-        }.start()
+        }
     }
 }
