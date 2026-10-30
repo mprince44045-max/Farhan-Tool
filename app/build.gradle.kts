@@ -47,5 +47,5 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     
     // Full GPL Library jisme saare encoders (mpeg4/x264) hain
-    implementation("com.arthenica:ffmpeg-kit-full-gpl:6.0-2")
+    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full-gpl:8.1.7")
 }
