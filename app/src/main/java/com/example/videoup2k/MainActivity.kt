@@ -10,18 +10,38 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+
+// Custom Colors
+val DarkBg = Color(0xFF121212)
+val CardBg = Color(0xFF1E1E1E)
+val AccentPurple = Color(0xFFBB86FC)
+val AccentGreen = Color(0xFF03DAC6)
 
 class MainActivity : ComponentActivity() {
     private var inputPath by mutableStateOf<String?>(null)
@@ -40,9 +60,9 @@ class MainActivity : ComponentActivity() {
                 }
                 inputPath = file.absolutePath
                 outputPath = null
-                status = "Video Ready ✓"
+                status = "Video Ready ✓\n2K Convert par click karein"
             } catch (e: Exception) {
-                status = "Error selecting video: ${e.message}"
+                status = "Error: ${e.message}"
             }
         }
     }
@@ -50,50 +70,178 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+            MaterialTheme(
+                colorScheme = darkColorScheme(background = DarkBg, surface = CardBg)
+            ) {
+                MainScreen()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun MainScreen() {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Farhan Tool",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            color = Color.White
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBg)
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                
+                // Status Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Farhan tool", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.height(16.dp))
-                    
-                    Text(status, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    Spacer(Modifier.height(32.dp))
+                    Text(
+                        text = status,
+                        color = Color.LightGray,
+                        modifier = Modifier.padding(16.dp),
+                        fontSize = 16.sp
+                    )
+                }
 
-                    Button(
-                        onClick = {
-                            pickVideo.launch(PickVisualMediaRequest(
-                                ActivityResultContracts.PickVisualMedia.VideoOnly
-                            ))
-                        },
-                        enabled = !processing
-                    ) { Text("Video Select Karein") }
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    Spacer(Modifier.height(16.dp))
+                // Main Video Button (Fancy)
+                Button(
+                    onClick = {
+                        pickVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                ) {
+                    Icon(Icons.Filled.VideoLibrary, contentDescription = null)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Select Video for 2K", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Convert Button
+                if (inputPath != null && !processing) {
                     Button(
                         onClick = { upscale() },
-                        enabled = inputPath != null && !processing
-                    ) { Text(if (processing) "Processing..." else "2K Convert Karein") }
-
-                    if (processing) {
-                        Spacer(Modifier.height(24.dp))
-                        CircularProgressIndicator()
-                    }
-
-                    // Jab video 2K ban jaye, tab yeh button dikhega
-                    if (outputPath != null && !processing) {
-                        Spacer(Modifier.height(24.dp))
-                        Button(
-                            onClick = { saveToGalleryAndOpen(File(outputPath!!)) },
-                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50))
-                        ) {
-                            Text("💾 Save to Gallery & Play")
-                        }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentGreen)
+                    ) {
+                        Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color.Black)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Convert to 2K", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+
+                if (processing) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    CircularProgressIndicator(color = AccentPurple)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Processing... Please wait", color = Color.Gray)
+                }
+
+                // Save Button
+                if (outputPath != null && !processing) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { saveToGalleryAndOpen(File(outputPath!!)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Icon(Icons.Filled.Save, contentDescription = null)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Save to Gallery & Play", fontSize = 18.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+                Divider(color = CardBg, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Fancy Grid Options (Camera, Photo, History)
+                Text("More Tools", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Camera Option
+                    FancyOptionCard(icon = Icons.Filled.CameraAlt, title = "Camera") {
+                        // TODO: Add Camera feature later
+                        status = "Camera feature coming soon!"
+                    }
+
+                    // Photo Option
+                    FancyOptionCard(icon = Icons.Filled.Photo, title = "Photo") {
+                        // TODO: Add Photo feature later
+                        status = "Photo feature coming soon!"
+                    }
+
+                    // History Option
+                    FancyOptionCard(icon = Icons.Filled.History, title = "History") {
+                        // TODO: Add History feature later
+                        status = "History feature coming soon!"
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun FancyOptionCard(icon: ImageVector, title: String, onClick: () -> Unit) {
+        Card(
+            modifier = Modifier
+                .width(100.dp)
+                .height(100.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBg),
+            border = BorderStroke(1.dp, Brush.linearGradient(listOf(AccentPurple, AccentGreen))),
+            onClick = onClick
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF2C2C2C)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = title, tint = AccentPurple)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -102,14 +250,13 @@ class MainActivity : ComponentActivity() {
         val input = inputPath ?: return
         processing = true
         outputPath = null
-        status = "2K me convert ho raha hai... (Thoda time lagega)"
+        status = "Converting video to 2K... Please wait."
 
         val outputFile = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4")
         val output = outputFile.absolutePath
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // mpeg4 encoder crash nahi karta
                 val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v mpeg4 -crf 23 \"$output\""
 
                 FFmpegKit.executeAsync(cmd) { session ->
@@ -117,10 +264,9 @@ class MainActivity : ComponentActivity() {
                         processing = false
                         if (ReturnCode.isSuccess(session.returnCode)) {
                             outputPath = output
-                            status = "✅ Convert Complete!\nAb gallery me save karein"
+                            status = "✅ Convert Complete!\nSave to gallery par click karein."
                         } else {
-                            val errorLogs = session.logs?.joinToString("\n") { it.message }?.takeLast(200) ?: "Unknown Error"
-                            status = "❌ Failed:\n$errorLogs"
+                            status = "❌ Conversion Failed. Try another video."
                         }
                     }
                 }
@@ -151,7 +297,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             
-            status = "✅ Gallery me save ho gaya!"
+            status = "✅ Saved to Gallery successfully!"
             
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(it, "video/mp4")
@@ -160,7 +306,7 @@ class MainActivity : ComponentActivity() {
             try {
                 startActivity(intent)
             } catch (e: Exception) {
-                status = "Saved, par play nahi ho paya."
+                status = "Saved, but failed to open player."
             }
         }
     }
