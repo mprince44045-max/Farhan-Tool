@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
                 inputPath = file.absolutePath
                 status = "Video Ready ✓"
             } catch (e: Exception) {
-                status = "Error: ${e.message}"
+                status = "Error selecting video: ${e.message}"
             }
         }
     }
@@ -51,6 +51,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Text("Farhan tool", style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(16.dp))
+                    
+                    // Text ko scrollable banaya hai taake error saaf dikhe
                     Text(status, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Spacer(Modifier.height(32.dp))
 
@@ -86,11 +88,10 @@ class MainActivity : ComponentActivity() {
 
         val output = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4").absolutePath
 
-        // Background Thread (Crash rokne ke liye)
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val cmd = "-y -i \"$input\" -vf \"scale=2560:1440:flags=lanczos\" " +
-                          "-c:v libx264 -preset ultrafast -crf 23 -c:a copy \"$output\""
+                // Simple command taake error na aaye
+                val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v libx264 -crf 23 \"$output\""
 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
@@ -98,7 +99,9 @@ class MainActivity : ComponentActivity() {
                         if (ReturnCode.isSuccess(session.returnCode)) {
                             status = "✅ Complete!\nFile saved in App Folder"
                         } else {
-                            status = "❌ Failed: ${session.failStackTrace?.take(100)}"
+                            // Asli error message screen par dikhane ke liye
+                            val errorLogs = session.logs?.joinToString("\n") { it.message }?.takeLast(200) ?: "Unknown Error"
+                            status = "❌ Failed:\n$errorLogs"
                         }
                     }
                 }
