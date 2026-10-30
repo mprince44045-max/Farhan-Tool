@@ -78,7 +78,8 @@ class MainActivity : ComponentActivity() {
         status = "2K me convert ho raha hai..."
 
         val output = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4").absolutePath
-
+        
+        // FFmpeg ko run karne ke liye Thread zaroori hai warna app crash hoti hai
         Thread {
             try {
                 val cmd = "-y -i \"$input\" -vf \"scale=2560:1440:flags=lanczos\" " +
