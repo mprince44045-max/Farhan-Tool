@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arthenica.ffmpegkit.FFmpegKit
@@ -105,7 +106,6 @@ class MainActivity : ComponentActivity() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 
-                // Status Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -117,13 +117,13 @@ class MainActivity : ComponentActivity() {
                         text = status,
                         color = Color.LightGray,
                         modifier = Modifier.padding(16.dp),
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Main Video Button (Fancy)
                 Button(
                     onClick = {
                         pickVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
@@ -136,12 +136,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Icon(Icons.Filled.VideoLibrary, contentDescription = null)
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Select Video for 2K", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Select Video", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Convert Button
                 if (inputPath != null && !processing) {
                     Button(
                         onClick = { upscale() },
@@ -164,7 +163,6 @@ class MainActivity : ComponentActivity() {
                     Text("Processing... Please wait", color = Color.Gray)
                 }
 
-                // Save Button
                 if (outputPath != null && !processing) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
@@ -182,10 +180,9 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
-                Divider(color = CardBg, thickness = 1.dp)
+                HorizontalDivider(color = CardBg, thickness = 1.dp)
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Fancy Grid Options (Camera, Photo, History)
                 Text("More Tools", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -193,21 +190,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Camera Option
                     FancyOptionCard(icon = Icons.Filled.CameraAlt, title = "Camera") {
-                        // TODO: Add Camera feature later
                         status = "Camera feature coming soon!"
                     }
 
-                    // Photo Option
                     FancyOptionCard(icon = Icons.Filled.Photo, title = "Photo") {
-                        // TODO: Add Photo feature later
                         status = "Photo feature coming soon!"
                     }
 
-                    // History Option
                     FancyOptionCard(icon = Icons.Filled.History, title = "History") {
-                        // TODO: Add History feature later
                         status = "History feature coming soon!"
                     }
                 }
@@ -215,6 +206,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun FancyOptionCard(icon: ImageVector, title: String, onClick: () -> Unit) {
         Card(
