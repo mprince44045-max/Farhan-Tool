@@ -1,7 +1,10 @@
 package com.example.videoup2k
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -21,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import kotlinx.coroutines.CoroutineScope
@@ -31,17 +36,32 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     private var inputPath by mutableStateOf<String?>(null)
     private var outputPath by mutableStateOf<String?>(null)
-    private var status by mutableStateOf("Select Video")
+    private var status by mutableStateOf("Select Video or Camera")
     private var processing by mutableStateOf(false)
-    private var showTools by mutableStateOf(false)
+    private var showTools by mutableStateOf(true)
+    private var cameraVideoUri: Uri? = null
 
+    // Gallery se video select karne ke liye
     private val pickVideo = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let {
             val file = File(cacheDir, "input.mp4")
             contentResolver.openInputStream(it)?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
             inputPath = file.absolutePath
             outputPath = null
-            status = "Video Ready ✓"
+            status = "Gallery Video Ready ✓"
+        }
+    }
+
+    // Camera se video record karne ke liye
+    private val takeVideo = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val file = File(cacheDir, "camera_input.mp4")
+            cameraVideoUri?.let { uri ->
+                contentResolver.openInputStream(uri)?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
+                inputPath = file.absolutePath
+                outputPath = null
+                status = "Camera Video Ready ✓"
+            }
         }
     }
 
@@ -81,6 +101,7 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // FHD Conversion Button
                         if (inputPath != null && !processing) {
                             Button(
                                 onClick = { upscale() },
@@ -88,7 +109,7 @@ class MainActivity : ComponentActivity() {
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
                             ) { 
-                                Text("Convert to 2K", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) 
+                                Text("Convert to FHD (1920x1080)", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) 
                             }
                         }
 
@@ -121,9 +142,12 @@ class MainActivity : ComponentActivity() {
                         if (showTools) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-                                Text("📷 Camera", color = Color.White)
-                                Text("🖼️ Photo", color = Color.White)
-                                Text("🕒 History", color = Color.White)
+                                // Camera Button
+                                TextButton(onClick = { openCamera() }) {
+                                    Text("📷 Camera", color = Color.White, fontSize = 16.sp)
+                                }
+                                Text("🖼️ Photo", color = Color.White, fontSize = 16.sp)
+                                Text("🕒 History", color = Color.White, fontSize = 16.sp)
                             }
                         }
                     }
@@ -132,21 +156,38 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Camera Open Karne ka Function
+    private fun openCamera() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), 100)
+            return
+        }
+        val videoFile = File(cacheDir, "camera_input.mp4")
+        cameraVideoUri = FileProvider.getUriForFile(this, "${packageName}.provider", videoFile)
+        
+        val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, cameraVideoUri)
+            putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1)
+        }
+        takeVideo.launch(intent)
+    }
+
+    // Video ko FHD (1920x1080) me convert karne ka function
     private fun upscale() {
         val input = inputPath ?: return
         processing = true
         outputPath = null
-        status = "Converting to 2K..."
-        val output = File(filesDir, "out_2k.mp4").absolutePath
+        status = "Converting to FHD..."
+        val output = File(filesDir, "out_fhd_${System.currentTimeMillis()}.mp4").absolutePath
 
         CoroutineScope(Dispatchers.IO).launch {
-            val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v mpeg4 -crf 23 \"$output\""
+            val cmd = "-y -i \"$input\" -vf \"scale=1920:1080\" -c:v mpeg4 -q:v 2 \"$output\""
             FFmpegKit.executeAsync(cmd) { session ->
                 runOnUiThread {
                     processing = false
                     if (ReturnCode.isSuccess(session.returnCode)) {
                         outputPath = output
-                        status = "✅ Convert Complete!"
+                        status = "✅ Converted to FHD High Quality!"
                     } else {
                         status = "❌ Conversion Failed."
                     }
@@ -157,7 +198,7 @@ class MainActivity : ComponentActivity() {
 
     private fun saveToGallery(file: File) {
         val values = ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, "Farhan_2K.mp4")
+            put(MediaStore.Video.Media.DISPLAY_NAME, "Farhan_FHD.mp4")
             put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
         }
