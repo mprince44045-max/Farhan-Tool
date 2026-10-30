@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
                     Text("Farhan tool", style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(16.dp))
                     
-                    // Text ko scrollable banaya hai taake error saaf dikhe
                     Text(status, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Spacer(Modifier.height(32.dp))
 
@@ -90,8 +89,8 @@ class MainActivity : ComponentActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Simple command taake error na aaye
-                val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v libx264 -crf 23 \"$output\""
+                // 'mpeg4' encoder use kiya hai jo har phone me chalta hai
+                val cmd = "-y -i \"$input\" -vf \"scale=2560:1440\" -c:v mpeg4 -crf 23 \"$output\""
 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
@@ -99,7 +98,6 @@ class MainActivity : ComponentActivity() {
                         if (ReturnCode.isSuccess(session.returnCode)) {
                             status = "✅ Complete!\nFile saved in App Folder"
                         } else {
-                            // Asli error message screen par dikhane ke liye
                             val errorLogs = session.logs?.joinToString("\n") { it.message }?.takeLast(200) ?: "Unknown Error"
                             status = "❌ Failed:\n$errorLogs"
                         }
