@@ -10,14 +10,23 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,10 +37,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
+val DarkBg = Color(0xFF121212)
+val CardBg = Color(0xFF1E1E1E)
+val AccentPurple = Color(0xFFBB86FC)
+val AccentGreen = Color(0xFF03DAC6)
+
 class MainActivity : ComponentActivity() {
     private var inputPath by mutableStateOf<String?>(null)
     private var outputPath by mutableStateOf<String?>(null)
-    private var status by mutableStateOf("Video select karein")
+    private var status by mutableStateOf("Select a video to start")
     private var processing by mutableStateOf(false)
 
     private val pickVideo = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -53,12 +67,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
+            MaterialTheme(colorScheme = darkColorScheme(background = DarkBg, surface = CardBg)) {
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("Farhan Tool", fontWeight = FontWeight.Bold) },
-                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1E1E1E))
+                            title = { Text("Farhan Tool", fontWeight = FontWeight.Bold, color = Color.White) },
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBg)
                         )
                     }
                 ) { padding ->
@@ -67,54 +81,122 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(padding)
                             .padding(16.dp)
-                            .background(Color(0xFF121212)),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(status, color = Color.LightGray, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.height(24.dp))
+                        // Status Card
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBg),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = status,
+                                color = Color.LightGray,
+                                modifier = Modifier.padding(16.dp),
+                                fontSize = 16.sp
+                            )
+                        }
 
+                        // Select Video Button
                         Button(
                             onClick = { pickVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)) },
                             modifier = Modifier.fillMaxWidth().height(60.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBB86FC))
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
                         ) {
+                            Icon(Icons.Filled.VideoLibrary, contentDescription = null)
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text("Select Video", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // Convert Button
                         if (inputPath != null && !processing) {
                             Button(
                                 onClick = { upscale() },
                                 modifier = Modifier.fillMaxWidth().height(60.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = AccentGreen)
                             ) {
+                                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color.Black)
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text("Convert to 2K", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             }
                         }
 
                         if (processing) {
                             Spacer(modifier = Modifier.height(24.dp))
-                            CircularProgressIndicator(color = Color(0xFFBB86FC))
+                            CircularProgressIndicator(color = AccentPurple)
                         }
-                        
-                        // YAHAN BRACKET KI GALTI THEEK KI GAYI HAI
+
+                        // Save Button
                         if (outputPath != null && !processing) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(
                                 onClick = { saveToGalleryAndOpen(File(outputPath!!)) },
                                 modifier = Modifier.fillMaxWidth().height(60.dp),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                             ) {
-                                Text("Save to Gallery & Play", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Filled.Save, contentDescription = null)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text("Save to Gallery & Play", fontSize = 18.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+                        HorizontalDivider(color = CardBg, thickness = 1.dp)
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // More Tools Section
+                        Text("More Tools", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            FancyOptionCard(icon = Icons.Filled.CameraAlt, title = "Camera") {
+                                status = "Camera feature coming soon!"
+                            }
+                            FancyOptionCard(icon = Icons.Filled.Photo, title = "Photo") {
+                                status = "Photo feature coming soon!"
+                            }
+                            FancyOptionCard(icon = Icons.Filled.History, title = "History") {
+                                status = "History feature coming soon!"
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun FancyOptionCard(icon: ImageVector, title: String, onClick: () -> Unit) {
+        Card(
+            modifier = Modifier.width(100.dp).height(100.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBg),
+            border = BorderStroke(1.dp, Brush.linearGradient(listOf(AccentPurple, AccentGreen))),
+            onClick = onClick
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF2C2C2C)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = title, tint = AccentPurple)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -124,7 +206,6 @@ class MainActivity : ComponentActivity() {
         processing = true
         outputPath = null
         status = "Converting to 2K... Please wait."
-
         val outputFile = File(filesDir, "output_2k_${System.currentTimeMillis()}.mp4")
         val output = outputFile.absolutePath
 
@@ -136,7 +217,7 @@ class MainActivity : ComponentActivity() {
                         processing = false
                         if (ReturnCode.isSuccess(session.returnCode)) {
                             outputPath = output
-                            status = "✅ Convert Complete!"
+                            status = "✅ Convert Complete! Save it now."
                         } else {
                             status = "❌ Conversion Failed."
                         }
@@ -159,7 +240,6 @@ class MainActivity : ComponentActivity() {
                 put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/FarhanTool")
             }
         }
-
         val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
         uri?.let {
             contentResolver.openOutputStream(it)?.use { outputStream ->
