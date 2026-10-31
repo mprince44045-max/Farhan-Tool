@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
                             try {
                                 pickVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)) 
                             } catch (e: Exception) {
-                                status = "Error opening gallery: ${e.message}"
+                                status = "Error: ${e.message}"
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(60.dp),
@@ -85,39 +85,26 @@ class MainActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (inputPath != null && !processing) {
-                        // Quality Options Row 1 (720p, 1080p)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { convertVideo("1280:720") },
-                                modifier = Modifier.weight(1f).height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                            ) { 
-                                Text("720p HD", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold) 
-                            }
-                            
-                            Button(
-                                onClick = { convertVideo("1920:1080") },
-                                modifier = Modifier.weight(1f).height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                            ) { 
-                                Text("1080p FHD", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold) 
-                            }
+                        // FHD Button (1920x1080)
+                        Button(
+                            onClick = { convertVideo("1920:1080") },
+                            modifier = Modifier.fillMaxWidth().height(60.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                        ) { 
+                            Text("FHD (1080p)", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
                         }
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Quality Options Row 2 (1440p / 2K)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { convertVideo("2560:1440") },
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                            ) { 
-                                Text("1440p 2K", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold) 
-                            }
+                        // 2K Button (2560x1440)
+                        Button(
+                            onClick = { convertVideo("2560:1440") },
+                            modifier = Modifier.fillMaxWidth().height(60.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                        ) { 
+                            Text("2K (1440p)", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
                         }
                     }
 
@@ -153,8 +140,9 @@ class MainActivity : ComponentActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // mpeg4 high resolutions par crash karta hai, isliye simple video encoding use ki hai
-                val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\" \"$output\""
+                // -preset ultrafast RAM bachata hai aur crash nahi hone deta
+                // -threads 2 se processor par load kam hota hai
+                val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\" -c:v libx264 -preset ultrafast -threads 2 \"$output\""
                 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
@@ -164,7 +152,7 @@ class MainActivity : ComponentActivity() {
                                 outputPath = output
                                 status = "✅ Convert Complete!"
                             } else {
-                                status = "❌ Conversion Failed. Try smaller resolution."
+                                status = "❌ Failed. Try smaller video."
                             }
                         } catch (e: Exception) {
                             status = "❌ Error: ${e.message}"
@@ -174,7 +162,7 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 runOnUiThread {
                     processing = false
-                    status = "❌ Error starting FFmpeg: ${e.message}"
+                    status = "❌ FFmpeg Error: ${e.message}"
                 }
             }
         }
@@ -183,7 +171,7 @@ class MainActivity : ComponentActivity() {
     private fun saveToGallery(file: File) {
         try {
             val values = ContentValues().apply {
-                put(MediaStore.Video.Media.DISPLAY_NAME, "Farhan_Video_${System.currentTimeMillis()}.mp4")
+                put(MediaStore.Video.Media.DISPLAY_NAME, "Farhan_HD_${System.currentTimeMillis()}.mp4")
                 put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
@@ -198,7 +186,6 @@ class MainActivity : ComponentActivity() {
                 }
                 status = "✅ Saved to Gallery!"
                 
-                // Save hone ke baad video ko play karne ke liye Gallery open karega
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(it, "video/mp4")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
