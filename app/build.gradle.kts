@@ -13,7 +13,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
         }
@@ -46,6 +45,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     
-    // Naya aur stable FFmpeg library
-    implementation("io.github.maitrungduc1410:ffmpeg-kit-video:7.1.5")
+    // Sharp Quality ke liye Full GPL library
+    implementation("com.arthenica:ffmpeg-kit-full-gpl:6.0-2")
 }
