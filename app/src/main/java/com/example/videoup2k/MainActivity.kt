@@ -142,7 +142,7 @@ class MainActivity : ComponentActivity() {
             try {
                 // -preset ultrafast RAM bachata hai aur crash nahi hone deta
                 // -threads 2 se processor par load kam hota hai
-                val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\" -c:v libx264 -preset ultrafast -threads 2 \"$output\""
+                val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\"-c:v h264_mediacodec\"$output\""
                 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
