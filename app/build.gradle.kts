@@ -46,5 +46,5 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     
     // Sharp Quality ke liye Full GPL library
-    implementation("com.arthenica:ffmpeg-kit-full-gpl:6.0-2")
+    implementation(dev.ffmpegkit-maintained:ffmpeg-kit-full-gpl:8.1.7")
 }
