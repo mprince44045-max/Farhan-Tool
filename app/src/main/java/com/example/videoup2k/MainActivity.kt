@@ -85,26 +85,24 @@ class MainActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (inputPath != null && !processing) {
-                        // FHD Button (1920x1080)
-                        Button(
-                            onClick = { convertVideo("1920:1080") },
-                            modifier = Modifier.fillMaxWidth().height(60.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                        ) { 
-                            Text("FHD (1080p)", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
-                        }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // 2K Button (2560x1440)
-                        Button(
-                            onClick = { convertVideo("2560:1440") },
-                            modifier = Modifier.fillMaxWidth().height(60.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                        ) { 
-                            Text("2K (1440p)", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { convertVideo("1920:1080") },
+                                modifier = Modifier.weight(1f).height(60.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                            ) { 
+                                Text("FHD", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
+                            }
+                            
+                            Button(
+                                onClick = { convertVideo("2560:1440") },
+                                modifier = Modifier.weight(1f).height(60.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                            ) { 
+                                Text("2K", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
+                            }
                         }
                     }
 
@@ -140,9 +138,8 @@ class MainActivity : ComponentActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // -preset ultrafast RAM bachata hai aur crash nahi hone deta
-                // -threads 2 se processor par load kam hota hai
-                val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\"-c:v h264_mediacodec\"$output\""
+                // mpeg4 encoder aur high quality (-q:v 2) jo crash nahi karta
+                val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\" -c:v mpeg4 -q:v 2 \"$output\""
                 
                 FFmpegKit.executeAsync(cmd) { session ->
                     runOnUiThread {
@@ -150,9 +147,9 @@ class MainActivity : ComponentActivity() {
                         try {
                             if (ReturnCode.isSuccess(session.returnCode)) {
                                 outputPath = output
-                                status = "✅ Convert Complete!"
+                                status = "✅ Convert Complete! High Quality"
                             } else {
-                                status = "❌ Failed. Try smaller video."
+                                status = "❌ Conversion Failed. Video too large?"
                             }
                         } catch (e: Exception) {
                             status = "❌ Error: ${e.message}"
@@ -186,6 +183,7 @@ class MainActivity : ComponentActivity() {
                 }
                 status = "✅ Saved to Gallery!"
                 
+                // Video play karne ke liye gallery open karega
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(it, "video/mp4")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
