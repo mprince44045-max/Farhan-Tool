@@ -24,9 +24,6 @@ jobs:
       - name: Generate Gradle Wrapper
         run: gradle wrapper --gradle-version 8.7
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
