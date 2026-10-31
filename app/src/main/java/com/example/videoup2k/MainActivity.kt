@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
     private var showTools by mutableStateOf(true)
     private var cameraVideoUri: Uri? = null
 
-    // Gallery se video select karne ke liye
     private val pickVideo = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let {
             val file = File(cacheDir, "input.mp4")
@@ -52,7 +51,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Camera se video record karne ke liye
     private val takeVideo = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val file = File(cacheDir, "camera_input.mp4")
@@ -101,21 +99,33 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // FHD Conversion Button
                         if (inputPath != null && !processing) {
-                            Button(
-                                onClick = { upscale() },
-                                modifier = Modifier.fillMaxWidth().height(60.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
-                            ) { 
-                                Text("Convert to FHD (1920x1080)", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) 
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = { convertVideo("1920:-2") },
+                                    modifier = Modifier.weight(1f).height(60.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                                ) { 
+                                    Text("FHD", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
+                                }
+                                
+                                Button(
+                                    onClick = { convertVideo("2560:-2") },
+                                    modifier = Modifier.weight(1f).height(60.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC6))
+                                ) { 
+                                    Text("2K Sharp", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) 
+                                }
                             }
                         }
 
                         if (processing) {
                             Spacer(modifier = Modifier.height(16.dp))
                             CircularProgressIndicator(color = Color(0xFFBB86FC))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Processing... Please wait", color = Color.Gray)
                         }
 
                         if (outputPath != null && !processing) {
@@ -142,7 +152,6 @@ class MainActivity : ComponentActivity() {
                         if (showTools) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-                                // Camera Button
                                 TextButton(onClick = { openCamera() }) {
                                     Text("📷 Camera", color = Color.White, fontSize = 16.sp)
                                 }
@@ -156,7 +165,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Camera Open Karne ka Function
     private fun openCamera() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.CAMERA), 100)
@@ -172,22 +180,23 @@ class MainActivity : ComponentActivity() {
         takeVideo.launch(intent)
     }
 
-    // Video ko FHD (1920x1080) me convert karne ka function
-    private fun upscale() {
+    // libx264 aur -crf 18 use kiya hai taake video ekdum sharp bane
+    private fun convertVideo(scaleParam: String) {
         val input = inputPath ?: return
         processing = true
         outputPath = null
-        status = "Converting to FHD..."
-        val output = File(filesDir, "out_fhd_${System.currentTimeMillis()}.mp4").absolutePath
+        status = "Converting to Sharp Quality..."
+        val output = File(filesDir, "out_${System.currentTimeMillis()}.mp4").absolutePath
 
         CoroutineScope(Dispatchers.IO).launch {
-            val cmd = "-y -i \"$input\" -vf \"scale=1920:1080\" -c:v mpeg4 -q:v 2 \"$output\""
+            val cmd = "-y -i \"$input\" -vf \"scale=$scaleParam\" -c:v libx264 -preset ultrafast -crf 18 \"$output\""
+            
             FFmpegKit.executeAsync(cmd) { session ->
                 runOnUiThread {
                     processing = false
                     if (ReturnCode.isSuccess(session.returnCode)) {
                         outputPath = output
-                        status = "✅ Converted to FHD High Quality!"
+                        status = "✅ Converted! Ultra Sharp Quality"
                     } else {
                         status = "❌ Conversion Failed."
                     }
@@ -198,7 +207,7 @@ class MainActivity : ComponentActivity() {
 
     private fun saveToGallery(file: File) {
         val values = ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, "Farhan_FHD.mp4")
+            put(MediaStore.Video.Media.DISPLAY_NAME, "Farhan_Sharp.mp4")
             put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
         }
